@@ -16,6 +16,41 @@
 <img src="https://cdn.kagamiz.com/BiliDrive/demo.png" width="750">
 </p>
 
+原理是把数据分成小块，小块伪装成图片上传。
+部分代码：
+```
+default_url = lambda sha1: f"http://i0.hdslb.com/bfs/album/{sha1}.x-ms-bmp"
+meta_string = lambda url: ("bdrive://" + re.findall(r"[a-fA-F0-9]{40}", url)[0]) if re.match(r"^http(s?)://i0.hdslb.com/bfs/album/[a-fA-F0-9]{40}.x-ms-bmp$", url) else url
+size_string = lambda byte: f"{byte / 1024 / 1024 / 1024:.2f} GB" if byte > 1024 * 1024 * 1024 else f"{byte / 1024 / 1024:.2f} MB" if byte > 1024 * 1024 else f"{byte / 1024:.2f} KB" if byte > 1024 else f"{int(byte)} B"
+
+...
+
+def bmp_header(data):
+    return b"BM" \
+        + struct.pack("<l", 14 + 40 + 8 + len(data)) \
+        + b"\x00\x00" \
+        + b"\x00\x00" \
+        + b"\x3e\x00\x00\x00" \
+        + b"\x28\x00\x00\x00" \
+        + struct.pack("<l", len(data)) \
+        + b"\x01\x00\x00\x00" \
+        + b"\x01\x00" \
+        + b"\x01\x00" \
+        + b"\x00\x00\x00\x00" \
+        + struct.pack("<l", math.ceil(len(data) / 8)) \
+        + b"\x00\x00\x00\x00" \
+        + b"\x00\x00\x00\x00" \
+        + b"\x00\x00\x00\x00" \
+        + b"\x00\x00\x00\x00" \
+        + b"\x00\x00\x00\x00\xff\xff\xff\x00"
+
+......
+
+def image_upload(data, cookies):
+    url = "https://api.vc.bilibili.com/api/v1/drawImage/upload"
+    ......
+```
+
 ## 特色
 
 - 轻量：无复杂依赖，资源占用少
